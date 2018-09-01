@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ThreadApp2_ThreadPool
@@ -52,12 +53,24 @@ namespace ThreadApp2_ThreadPool
 
         private void btnThreadPool2_Click(object sender, EventArgs e)
         {
+            rtbResults.Text = string.Empty;
+
             ThreadInfo2 threadInfo = new ThreadInfo2();
             threadInfo.FuncName = UpdateLabel;
             threadInfo.SelectedIndex = 3;
 
-            ThreadPool.QueueUserWorkItem(new WaitCallback(ProcessFile2), threadInfo);   //1 thread
-            System.Threading.Thread.Sleep(1000);
+            //ThreadPool.QueueUserWorkItem(new WaitCallback(ProcessFile2), threadInfo);   //1 thread & include Join()
+
+            //var thread = new Thread(() => { ProcessFile2(threadInfo) });
+            //thread.Start();
+            //thread.Join();    //do no use if you want to label to be updated 
+
+            var task = Task.Factory.StartNew(() =>
+            {
+                ProcessFile2(threadInfo);
+            });
+            //task.Wait();      //do no use if you want to label to be updated 
+
             label1.Text = "Done";
         }
 
@@ -69,18 +82,18 @@ namespace ThreadApp2_ThreadPool
             int index = threadInfo.SelectedIndex;
 
             //this.Invoke(new LabelDelegate(UpdateLabel));        //Invoke delegate function
-            FuncName.Invoke("ProcessFile2");
+            FuncName.Invoke("ProcessFile2 is invoked");
         }
 
         //update Form1.Lable
         private void UpdateLabel(string state)
         {
-            label1.BeginInvoke((MethodInvoker)delegate
+            label1.BeginInvoke((MethodInvoker) delegate
             {
                 //label1.Text = state;
-                rtbResults.Text = state;
+                rtbResults.Text += state;
+                System.Threading.Thread.Sleep(1000);
             });
-            System.Threading.Thread.Sleep(1000);
         }
 
         #endregion
@@ -98,6 +111,7 @@ namespace ThreadApp2_ThreadPool
         {
             progressBar1.Maximum = 100;
             progressBar1.Minimum = 0;
+            progressBar1.Value = 0;
 
             ThreadInfo3 threadInfo = new ThreadInfo3();
             threadInfo.index = 70;
