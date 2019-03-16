@@ -1,0 +1,35 @@
+
+C# - Check File is being used by another process, if not delete files
+
+Try
+{
+    sftpClient.Get(fileName, TargetFolder);
+}
+catch (Exception ex)
+{
+    //tracehelper.WriteErrorLineIf(COSwitch.Level >= TraceLevel.Error, ex.Message.ToString(), new System.Diagnostics.StackTrace(ex, true), sessionNo);
+    traceStack += String.Format("Unable to download file: reason={0}, state={1}", ex.Message, isConnected);
+
+    //2019-03-14 ML
+    String originalFileName = GetFileName(fileName);                      
+    string deleteFile = System.IO.Path.Combine(target, originalFileName);
+    if (File.Exists(deleteFile))
+    {
+        sftpClient.Cancel();        //ShartSSH.sFTP
+        sftpClient.Close();
+
+        FileInfo info = new FileInfo(deleteFile);
+        System.GC.Collect();
+        System.GC.WaitForPendingFinalizers();
+        info.IsReadOnly = false;
+        info.Delete();
+
+        File.Delete(deleteFile);
+    }
+
+    throw new Exception(traceStack);
+}
+finally
+{
+    disconnect();
+}
